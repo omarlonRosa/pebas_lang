@@ -1,0 +1,46 @@
+#Build directories 
+build/
+out/
+cmake-build-*/
+
+#IDE file
+.idea/
+.vscode/
+*.swap
+*~
+
+#Compiled Object file
+*.o
+*.obj
+
+precompiled Headers 
+*.gch 
+*.pch 
+
+#Compiled Dynamic libraries 
+*.so
+*.dylib 
+*.dll 
+
+#Compiled Static libraries 
+*.a
+*.lib 
+
+#executables 
+*.exe 
+*.out 
+*.app 
+
+#cmake 
+CMakeCache.txt 
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake 
+install_manifest.txt 
+compile_commands.json 
+CTestTestfile.cmake 
+
+#macOS specific 
+.DS_Store 

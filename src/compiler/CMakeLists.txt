@@ -1,0 +1,7 @@
+add_subdirectory(lexer)
+add_subdirectory(parser)
+add_subdirectory(ast)
+add_subdirectory(semantic)
+add_subdirectory(ir)
+add_subdirectory(optimizer)
+add_subdirectory(codegen)
