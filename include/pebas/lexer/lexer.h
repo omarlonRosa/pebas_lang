@@ -3,87 +3,112 @@
 
 #include <string>
 #include <vector>
+#include <map>
+#include <variant>
+
 
 namespace pebas {
 
-enum class TokensType {
-    CLASS, INTERFACE, ENUM, STRUCT, FUNCTION, VAR, CONST,
-    IF, ELSE, SWITCH, CASE, FOR, WHILE, DO, BREAK, CONTINUE, RETURN,
-  TRY, CATCH, THROW, PUBLIC, PRIVATE, PROTECTED, STATIC,
+enum class TokenType {
+  //Single-Character tokens.
+  LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, 
+  LEFT_BRACKET, RIGHT_BRACKET, COMMA, DOT, MINUS, PLUS, 
+  SEMICOLON, SLASH, STAR, COLON, QUESTION, PERCENT, TILDE,
+  AMPERSAND, PIPE, CARET, 
 
-  PLUS, MINUS, MULTIPLY, DIVIDE, ASSIGN, EQUAL, NOT_EQUAL,
-  LESS, GREATER, LESS_EQUAL, GREATER_EQUAL, AND, OR, NOT,
+  //One or two character tokens.
+  BANG, BANG_EQUAL, EQUAL, EQUAL_EQUAL,
+  GREATER, GREATER_EQUAL, LESS, LESS_EQUAL,
 
-  INDENTIFIER, INTEGER, FLOAT, STRING, CHAR, TRUE, FALSE, NULL_LITERAL,
+  //Assingment operators 
+  PLUS_ASSIGN, MINUS_ASSIGN, STAR_ASSIGN, PERCENT_ASSIGN,
+  AMPERSAND_ASSIGN, PIPE_ASSIGN, CARET_ASSIGN,
+  LESS_LESS_ASSIGN, GREATER_GREATER_ASSIGN,
 
-  LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, LEFT_BRACKET, RIGHT_BRACKET,
-  SEMICOLON, COLON, COMMA, DOT, ARROW,
+  //Increment/Decrement 
+  AND_AND, OR_OR, 
 
-  COMMENT, EOF_TOKEN, ERROR
+  //Bitwise shifts 
+  ARROW_RIGHT, // ->
+  DOUBLE_ARROW_RIGHT, // =>
+  COLON_COLON, // :: (Scope resolution)
+  DOT_DOT, // .. (Range operator)
+
+  //Literals.
+  IDENTIFIER, STRING, INTERGER_LITERAL, FLOAT_LITERAL, CHAR_LITERAL, 
+
+  //keywords 
+  KEYWORD_CLASS, KEYWORD_INTERFACE, KEYWORD_ENUM, 
+  KEYWORD_STRUCT, KEYWORD_FUNCTION, KEYWORD_VAR, 
+  KEYWORD_CONST, KEYWORD_PUBLIC, KEYWORD_PRIVATE,
+  KEYWORD_PROTECTED, KEYWORD_STATIC, KEYWORD_ABSTRACT,
+  KEYWORD_OVERRIDE, KEYWORD_VIRTUAL, KEYWORD_IMPORT,
+  KEYWORD_PACKAGE, KEYWORD_NEW, KEYWORD_THIS, 
+  KEYWORD_SUPER, KEYWORD_AS, KEYWORD_IS,
+
+  //Flow control 
+  KEYWORD_IF, KEYWORD_ELSE, KEYWORD_SWITCH, KEYWORD_CASE,
+  KEYWORD_FOR, KEYWORD_WHILE, KEYWORD_DO, KEYWORD_BREAK,
+  KEYWORD_CONTINUE, KEYWORD_RETURN,
+
+  //Error Handling 
+  KEYWORD_TRY, KEYWORD_CATCH, KEYWORD_THROW,
+
+  //Literals as keywords 
+  KEYWORD_NULL, KEYWORD_TRUE, KEYWORD_FALSE,
+
+  KEYWORD_PRINT,
+
+  TOKEN_ERROR, TOKEN_EOF,
+
 }; 
 
-struct SourceLocation {
-  std::string filename;
-  int line;
-  int column;
-
-  SourceLocation() : line(1), column(1) {}
-  SourceLocation(std::string fn, int l, int c) : filename(fn), line(l), column(c) {}
-};
-
-class Token {
-public:
+struct Token {
   TokenType type;
   std::string lexeme;
-  SourceLocation location; 
+  int line;
+  int col;
 
-  union {
-    int intValue;
-    double floatValue;
-    bool boolValue;
-  };
-  std::string stringValue;
+  TokenType(TokenType type, std::string lexeme, int line, int col);
 
-  Token(TokenType type, const std::string& lexeme, const SourceLocation& loc)
-    : type(type),lexeme(lexeme), location(loc) {}
+  std::string to_string() const;
 };
 
 class Lexer {
 public:
-  Lexer(const std::string& source, const std::string& filename = "<stdin>"); 
-  Token nextToken();
-  std::vector<Token> tokenizer();
+  Lexer(std::string source);
+  std::vector<Token> scan_Tokens();
 
 private: 
-  std::string source;
-  std::string filename;
-  int start;
-  int current;
-  int line;
-  int column;
+  std::string m_source;
+  std::vector<Token> m_tokens;
+  std::map<std::string, TokenType> m_keywords;
 
+  int m_start = 0;
+  int m_current = 0;
+  int m_line = 1;
+  int m_column = 1;
+
+  void scan_token_internal();
+  void add_token(TokenType type);
+
+
+  char advance();
   char peek() const;
   char peekNext() const;
-  char advance();
   bool match(char expected);
-  bool isAtEnd() const;
-  bool isDigit(char c) const;
-  bool isAlpha(char c) const;
-  bool isAlphaNumeric(char c) const;
 
-  void skipWhitespace();
-  void skipComment();
+  void string_literal(char quote_type = '"');
+  void number_literal();
+  void identifier();
+  void block_comment();
 
-  Token identifier();
-  Token number();
-  Token string();
-  Token character();
-
-  Token makeToken(TokenType type);
-  Token errorToken(const std::string& message);
-
-  TokenType identifierType();
+  bool is_at_end() const;
+  bool is_digit(char c) const;
+  bool is_alpha(char c) const;
+  bool is_alpha_numeric(char c) const;
 };
 } 
 
 #endif 
+ 
