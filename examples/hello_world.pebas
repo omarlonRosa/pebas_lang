@@ -1,0 +1,39 @@
+# Exemplo simples em Pebas Lang
+# Este é um comentário de linha única
+
+#*
+  Este é um comentário
+  de múltiplas linhas
+*#
+
+# Declaração de variáveis
+var x: int = 42;
+var y: float = 3.14;
+var name: string = "Pebas Lang";
+var isActive: bool = true;
+
+# Função simples
+function add(a: int, b: int) -> int {
+    return a + b;
+}
+
+# Função principal
+function main() -> int {
+    var result: int = add(10, 20);
+    print("Resultado: ${result}");
+    
+    if result > 25 {
+        print("Resultado é maior que 25");
+    } else {
+        print("Resultado é menor ou igual a 25");
+    }
+    
+    var counter: int = 0;
+    while counter < 5 {
+        print("Contador: ${counter}");
+        counter = counter + 1;
+    }
+    
+    return 0;
+}
+

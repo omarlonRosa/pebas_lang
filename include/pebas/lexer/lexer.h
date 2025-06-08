@@ -1,114 +1,149 @@
 #ifndef PEBAS_LEXER_H
-#define PEBAS_LEXER_H 
+#define PEBAS_LEXER_H
 
 #include <string>
 #include <vector>
 #include <map>
 #include <variant>
 
-
 namespace pebas {
 
+// Single-Character tokens
 enum class TokenType {
-  //Single-Character tokens.
-  LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, 
-  LEFT_BRACKET, RIGHT_BRACKET, COMMA, DOT, MINUS, PLUS, 
-  SEMICOLON, SLASH, STAR, COLON, QUESTION, PERCENT, TILDE,
-  AMPERSAND, PIPE, CARET, 
+    LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
+    LEFT_BRACKET, RIGHT_BRACKET, COMMA, DOT, MINUS, PLUS,
+    SEMICOLON, SLASH, STAR, PERCENT, TILDE,
 
-  //One or two character tokens.
-  BANG, BANG_EQUAL, EQUAL, EQUAL_EQUAL,
-  GREATER, GREATER_EQUAL, LESS, LESS_EQUAL,
+    // One or two character tokens
+    BANG, BANG_EQUAL,
+    EQUAL, EQUAL_EQUAL,
+    GREATER, GREATER_EQUAL,
+    LESS, LESS_EQUAL,
+    ARROW, // ->
+    DOUBLE_ARROW_RIGHT, // =>
+    COLON_COLON, // ::
+    DOT_DOT, // .. (Range operator)
 
-  //Assingment operators 
-  PLUS_ASSIGN, MINUS_ASSIGN, STAR_ASSIGN, PERCENT_ASSIGN,
-  AMPERSAND_ASSIGN, PIPE_ASSIGN, CARET_ASSIGN,
-  LESS_LESS_ASSIGN, GREATER_GREATER_ASSIGN,
+    // Bitwise shifts
+    ARROW_RIGHT, // << (Left shift)
+    DOUBLE_ARROW_RIGHT_OP, // >> (Right shift)
 
-  //Increment/Decrement 
-  AND_AND, OR_OR, 
+    // Assignment operators
+    PLUS_ASSIGN, MINUS_ASSIGN, STAR_ASSIGN, PERCENT_ASSIGN,
+    AMPERSAND_ASSIGN, PIPE_ASSIGN, CARET_ASSIGN,
+    LESS_LESS_ASSIGN, GREATER_GREATER_ASSIGN,
 
-  //Bitwise shifts 
-  ARROW_RIGHT, // ->
-  DOUBLE_ARROW_RIGHT, // =>
-  COLON_COLON, // :: (Scope resolution)
-  DOT_DOT, // .. (Range operator)
+    // Increment/Decrement
+    AND_AND, OR_OR,
 
-  //Literals.
-  IDENTIFIER, STRING, INTERGER_LITERAL, FLOAT_LITERAL, CHAR_LITERAL, 
+    // Literals
+    IDENTIFIER, STRING, INTEGER_LITERAL, FLOAT_LITERAL, CHAR_LITERAL,
 
-  //keywords 
-  KEYWORD_CLASS, KEYWORD_INTERFACE, KEYWORD_ENUM, 
-  KEYWORD_STRUCT, KEYWORD_FUNCTION, KEYWORD_VAR, 
-  KEYWORD_CONST, KEYWORD_PUBLIC, KEYWORD_PRIVATE,
-  KEYWORD_PROTECTED, KEYWORD_STATIC, KEYWORD_ABSTRACT,
-  KEYWORD_OVERRIDE, KEYWORD_VIRTUAL, KEYWORD_IMPORT,
-  KEYWORD_PACKAGE, KEYWORD_NEW, KEYWORD_THIS, 
-  KEYWORD_SUPER, KEYWORD_AS, KEYWORD_IS,
+    // Keywords
+    KEYWORD_CLASS, KEYWORD_INTERFACE, KEYWORD_ENUM,
+    KEYWORD_STRUCT, KEYWORD_FUNCTION, KEYWORD_VAR,
+    KEYWORD_CONST, KEYWORD_PUBLIC, KEYWORD_PRIVATE,
+    KEYWORD_PROTECTED, KEYWORD_STATIC, KEYWORD_ABSTRACT,
+    KEYWORD_OVERRIDE, KEYWORD_VIRTUAL, KEYWORD_IMPORT,
+    KEYWORD_PACKAGE, KEYWORD_NEW, KEYWORD_THIS,
+    KEYWORD_SUPER, KEYWORD_AS, KEYWORD_IS,
 
-  //Flow control 
-  KEYWORD_IF, KEYWORD_ELSE, KEYWORD_SWITCH, KEYWORD_CASE,
-  KEYWORD_FOR, KEYWORD_WHILE, KEYWORD_DO, KEYWORD_BREAK,
-  KEYWORD_CONTINUE, KEYWORD_RETURN,
+    // Flow control
+    KEYWORD_IF, KEYWORD_ELSE, KEYWORD_SWITCH, KEYWORD_CASE,
+    KEYWORD_FOR, KEYWORD_WHILE, KEYWORD_DO, KEYWORD_BREAK,
+    KEYWORD_CONTINUE, KEYWORD_RETURN,
 
-  //Error Handling 
-  KEYWORD_TRY, KEYWORD_CATCH, KEYWORD_THROW,
+    // Error Handling
+    KEYWORD_TRY, KEYWORD_CATCH, KEYWORD_THROW,
 
-  //Literals as keywords 
-  KEYWORD_NULL, KEYWORD_TRUE, KEYWORD_FALSE,
+    // Literals as keywords
+    KEYWORD_NULL, KEYWORD_TRUE, KEYWORD_FALSE,
 
-  KEYWORD_PRINT,
+    KEYWORD_PRINT,
 
-  TOKEN_ERROR, TOKEN_EOF,
+    TOKEN_ERROR, TOKEN_EOF,
 
-}; 
+    // Additional operators
+    COLON, QUESTION, AMPERSAND, PIPE, CARET
+};
+
+struct SourceLocation {
+    std::string filename;
+    int line;
+    int column;
+
+    SourceLocation(const std::string& file, int l, int c)
+        : filename(file), line(l), column(c) {}
+};
 
 struct Token {
-  TokenType type;
-  std::string lexeme;
-  int line;
-  int col;
+    TokenType type;
+    std::string lexeme;
+    SourceLocation location;
+    
+    // Union-like storage for literal values
+    std::variant<std::monostate, int, double, std::string, char> value;
 
-  TokenType(TokenType type, std::string lexeme, int line, int col);
-
-  std::string to_string() const;
+    Token(TokenType t, const std::string& lex, const SourceLocation& loc)
+        : type(t), lexeme(lex), location(loc) {}
+        
+    // Convenience constructors for literals
+    Token(TokenType t, const std::string& lex, const SourceLocation& loc, int intVal)
+        : type(t), lexeme(lex), location(loc), value(intVal) {}
+        
+    Token(TokenType t, const std::string& lex, const SourceLocation& loc, double floatVal)
+        : type(t), lexeme(lex), location(loc), value(floatVal) {}
+        
+    Token(TokenType t, const std::string& lex, const SourceLocation& loc, const std::string& stringVal)
+        : type(t), lexeme(lex), location(loc), value(stringVal) {}
+        
+    Token(TokenType t, const std::string& lex, const SourceLocation& loc, char charVal)
+        : type(t), lexeme(lex), location(loc), value(charVal) {}
 };
 
 class Lexer {
 public:
-  Lexer(std::string source);
-  std::vector<Token> scan_Tokens();
+    Lexer(const std::string& source, const std::string& filename);
+    
+    Token nextToken();
+    std::vector<Token> tokenize();
 
-private: 
-  std::string m_source;
-  std::vector<Token> m_tokens;
-  std::map<std::string, TokenType> m_keywords;
+private:
+    const std::string& source;
+    const std::string filename;
+    size_t start;
+    size_t current;
+    int line;
+    int column;
 
-  int m_start = 0;
-  int m_current = 0;
-  int m_line = 1;
-  int m_column = 1;
-
-  void scan_token_internal();
-  void add_token(TokenType type);
-
-
-  char advance();
-  char peek() const;
-  char peekNext() const;
-  bool match(char expected);
-
-  void string_literal(char quote_type = '"');
-  void number_literal();
-  void identifier();
-  void block_comment();
-
-  bool is_at_end() const;
-  bool is_digit(char c) const;
-  bool is_alpha(char c) const;
-  bool is_alpha_numeric(char c) const;
+    // Auxiliary methods
+    char peek() const;
+    char peekNext() const;
+    char advance();
+    bool match(char expected);
+    bool isAtEnd() const;
+    bool isDigit(char c) const;
+    bool isAlpha(char c) const;
+    bool isAlphaNumeric(char c) const;
+    
+    void skipWhitespace();
+    void skipComment();
+    
+    Token identifier();
+    Token number();
+    Token string();
+    Token character();
+    
+    Token makeToken(TokenType type);
+    Token errorToken(const std::string& message);
+    
+    TokenType identifierType();
+    
+    // Keywords map
+    static const std::map<std::string, TokenType> keywords;
 };
-} 
 
-#endif 
- 
+} // namespace pebas
+
+#endif // PEBAS_LEXER_H
+
